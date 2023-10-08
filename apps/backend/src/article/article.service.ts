@@ -5,6 +5,7 @@ import { EntityRepository } from '@mikro-orm/mysql';
 
 import { User } from '../user/user.entity';
 import { Article } from './article.entity';
+import {Tag} from '../tag/tag.entity'
 import { IArticleRO, IArticlesRO, ICommentsRO } from './article.interface';
 import { Comment } from './comment.entity';
 import { CreateArticleDto, CreateCommentDto } from './dto';
@@ -154,7 +155,39 @@ export class ArticleService {
       { populate: ['followers', 'favorites', 'articles'] },
     );
     const article = new Article(user!, dto.title, dto.description, dto.body);
-    article.tagList.push(...dto.tagList);
+    // console.log(dto.tagList , ...dto.tagList , 'ranjan kumar'  )
+
+
+    // Split the tagList into , separated list of tags and pass to the article.tagList
+    var op_array: string[] | null = null;
+    let inputString = dto.tagList as string | string[];
+
+    if (typeof inputString === 'string') {
+      // If it's a string, split it by comma
+      //op_array = inputString.split(",");
+      op_array = inputString.split(",").map((tag) => tag.trim());
+      // console.log('many tags', op_array);
+    } else if (Array.isArray(inputString)) {
+      // If it's an array, use it as is
+      op_array = inputString;
+      // console.log('array of tags', op_array);
+    } 
+
+    // Needed BEcause Typescript thinks of it as never datatype.
+    if (op_array !== null) {
+      article.tagList.push(...op_array); // Push all elements of op_array into article.tagList
+      
+
+      for (const tagName of op_array) {
+        const existingTag = await this.em.findOne(Tag, { tag: tagName });
+    
+        if (!existingTag) {
+          const newTag = new Tag(tagName);
+          this.em.persist(newTag);
+        }
+      }
+    }
+        
     user?.articles.add(article);
     await this.em.flush();
 

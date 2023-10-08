@@ -5,6 +5,21 @@ import { Validators } from '@angular/forms';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Store } from '@ngrx/store';
 import { articleActions, articleEditActions, articleQuery } from '@realworld/articles/data-access';
+import { FormControl, ValidationErrors } from '@angular/forms';
+
+function validateAuthors(control: FormControl): ValidationErrors | null {
+  if (control.value) {
+    const authors = control.value.split(',').map((email: string) => email.trim());
+    const currentUserEmail = 'user@example.com'; // Replace with the actual email of the current user
+
+    if (!authors.includes(currentUserEmail)) {
+      return { invalidAuthors: true, message: 'You cannot remove yourself from the authors list.' };
+    }
+  }
+
+  return null;
+}
+
 
 const structure: Field[] = [
   {
@@ -30,6 +45,12 @@ const structure: Field[] = [
     name: 'tagList',
     placeholder: 'Enter Tags',
     validator: [],
+  },
+  {
+    type: 'INPUT',
+    name: 'authors',
+    placeholder: 'Authors (comma-separated email addresses)',
+    validator: [validateAuthors],
   },
 ];
 
@@ -58,6 +79,7 @@ export class ArticleEditComponent implements OnInit, OnDestroy {
   }
 
   updateForm(changes: any) {
+    console.log( 'changes rk',changes , 'ch')
     this.store.dispatch(formsActions.updateData({ data: changes }));
   }
 
